@@ -10,7 +10,7 @@ classifiers = [
  
 setup(
   name='trilio',
-  version='0.1.4',
+  version='0.1.5',
   description='Trilio is a blockchain written in Python that utilizes the proof-of-work concept and helps creating a more smooth and transparent transaction experience, with multiple integrations such as NFT(s) and tokens. ',
   long_description=open('README.txt').read(),
   url='',
