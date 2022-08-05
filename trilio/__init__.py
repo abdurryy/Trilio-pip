@@ -16,6 +16,15 @@ class Trilio:
         self.CollectionStorage = self.CollectionStorage()
         self.AssetStorage = self.AssetStorage()
     
+    def validate_chain(self):
+            for i in range(len(self.trilio.chain)):
+                if self.trilio.chain[i].transactions[0] != "genisis block":
+                    if self.trilio.chain[i].get_hash() != self.trilio.chain[i].hash:
+                        return False
+                    
+                    if self.trilio.chain[i].previous_hash != self.trilio.chain[i-1].hash:
+                        return False
+    
     def create_block(self,addresses=None, collections=None, assets=None, trades=None):
         nonce = self.trilio.difficulty ** 12
 
@@ -125,15 +134,6 @@ class Trilio:
                     address["info"]["balance"] += amount
                     return address["info"]["balance"]
             return "Failed"
-
-        def validate_chain(self):
-            for i in range(len(self.trilio.chain)):
-                if self.trilio.chain[i].transactions[0] != "genisis block":
-                    if self.trilio.chain[i].get_hash() != self.trilio.chain[i].hash:
-                        return False
-                    
-                    if self.trilio.chain[i].previous_hash != self.trilio.chain[i-1].hash:
-                        return False
         
         def validate_address(self, private_key=None, public_key=None):
             r = self.require(private_key, public_key)
