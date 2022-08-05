@@ -13,7 +13,7 @@ setup(
   version='0.1.2',
   description='Trilio is a blockchain written in Python that utilizes the proof-of-work concept and helps creating a more smooth and transparent transaction experience, with multiple integrations such as NFT(s) and tokens. ',
   long_description=open('README.txt').read() + '\n\n' + open('CHANGELOG.txt').read(),
-  url='',  
+  url='',
   author='Abdurrahman Ismail Giumale',
   author_email='abdxrrahman.ismail@gmail.com',
   license='MIT', 

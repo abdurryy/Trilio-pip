@@ -2,18 +2,174 @@ from datetime import datetime
 import hashlib, random
 # New storage models
 
-class CollectionStorage:
+class Trilio:
     def __init__(self):
-        self.collections = []
+        self.trilio = Blockchain(
+            name="Trilio", 
+            difficulty=4,
+            minimum_transactions=1
+        )
+        # Create genisis
+        self.trilio.chain.append(Block(datetime.now().timestamp(), ["genisis block"]))
+        self.wallet = self.Wallet()
+        self.TradeStorage = self.TradeStorage()
+        self.CollectionStorage = self.CollectionStorage()
+        self.AssetStorage = self.AssetStorage()
+    
+    def create_block(self,addresses=None, collections=None, assets=None, trades=None):
+        nonce = self.trilio.difficulty ** 12
 
-class AssetStorage:
-    def __init__(self):
-        self.assets = []
+        for i in range(nonce):
+            pass
+
+        if len(self.trilio.pending_transactions) >= self.trilio.minimum_transactions:
+            # block.hash, block.timestamp, block.transactions, block.previous_hash
+            transactions = self.trilio.pending_transactions
+            self.trilio.pending_transactions = []
+            
+            block = Block(datetime.now().timestamp(), transactions, self.trilio.chain[len(self.trilio.chain)-1].hash, addresses, collections, assets, trades)
+            self.trilio.chain.append(block)
+            return block
+        else:
+            return False
+        
+
+        
+    
+    def create_transaction(self, timestamp, data):
+        self.trilio.pending_transactions.append(
+            Transaction(timestamp,data=data)
+        )
+        self.create_block(
+            addresses=self.Address,
+            collections=self.CollectionStorage,
+            trades=self.TradeStorage,
+            assets=self.AssetStorage
+        )
+    
+
+    def get_transaction(self, data):
+        for block in self.trilio.chain:
+            for transaction in block.transactions:
+                if transaction.hash == data:
+                    return transaction
+    
+    class Wallet():
+        def __init__(self):
+            self.addresses = []
+        
+        def create_wallet(self):
+            pve = random.randint(100000000000,99999999999999)
+            pbc = random.randint(100000000000,99999999999999)
+            private_key = "pve"+str(hashlib.sha256(str(pve).encode('utf-8')).hexdigest())
+            public_key =  "pbc"+str(hashlib.sha256(str(pbc).encode('utf-8')).hexdigest())
+            cred_keys = { 
+                "address": {
+                    "pve":private_key, 
+                    "pbc":public_key 
+                }, 
+                "info": {
+                    "balance":float(0),
+                    "assets" : [],
+                    "collections" : []
+                }
+            }
+            if self.validate_address(private_key, public_key) == False:
+                self.addresses.append(cred_keys)
+                return cred_keys
+            else:
+                return self.create_address()        
+
+        def get_balance(self, private_key=None, public_key=None):
+            r = self.require(private_key, public_key)
+            if r == False:
+                return "Private and Public keys are required"
+                
+            for address in self.addresses:
+                if address["address"]["pbc"] == public_key and address["address"]["pve"] == private_key:
+                    return float(address["info"]["balance"])
+            
+        def get_assets(self, private_key=None, public_key=None):
+            r = self.require(private_key, public_key)
+            if r == False:
+                return "Private and Public keys are required"
+                
+            for address in self.addresses:
+                if address["address"]["pbc"] == public_key and address["address"]["pve"] == private_key:
+                    return address["info"]["assets"]
+        
+        def get_collections(self, private_key=None, public_key=None):
+            r = self.require(private_key, public_key)
+            if r == False:
+                return "Private and Public keys are required"
+                
+            for address in self.addresses:
+                if address["address"]["pbc"] == public_key and address["address"]["pve"] == private_key:
+                    return address["info"]["collections"]
+        
+        def get_public_key(self, private_key=None):
+            if private_key == None:
+                return "Failed"
+            
+            for address in self.addresses:
+                if address["address"]["pve"] == private_key:
+                    return address["address"]["pbc"]
+            return "Failed"
+        
+        def credit_wallet(self, public_key = None, amount = None):
+            if public_key == None or amount == None:
+                return "Failed"
+            
+            for address in self.addresses:
+                if address["address"]["pbc"] == public_key:
+                    address["info"]["balance"] += amount
+                    return address["info"]["balance"]
+            return "Failed"
 
 
-class TradeStorage:
-    def __init__(self):
-        self.trades = []
+        
+        def validate_address(self, private_key=None, public_key=None):
+            r = self.require(private_key, public_key)
+            if r == False:
+                return "Private and Public keys are required"
+            
+            for address in self.addresses:
+                if address["address"]["pbc"] == public_key and address["address"]["pve"] == private_key:
+                    return True
+            return False        
+
+        def require(self, private_key=None, public_key=None):
+            if private_key == None or public_key == None:
+                return False
+            return True
+
+    class TradeStorage():
+        def __init__(self):
+            self.trades = []
+
+    class CollectionStorage():
+        def __init__(self):
+            self.collections = []
+
+    class AssetStorage():
+        def __init__(self):
+            self.assets = []
+
+class Asset:
+    def __init__(self, timestamp, public_key, collection_id, name, description, mint_number, _ad=None, _as=None):
+        self.id = len(_as.assets) + 1
+        self.name = name
+        self.description = description
+        self.collection_id = collection_id
+        self.created_at = timestamp
+        self.owner = public_key
+        self.mint = mint_number+1
+        self.trading = False
+        self.selling = False
+        _as.assets.append(self)
+        for address in _ad.addresses:
+            if address["address"]["pbc"] == public_key:
+                address["info"]["assets"].append(self.id)
 
 class Transaction:
     def __init__(self, timestamp, data):
@@ -23,7 +179,6 @@ class Transaction:
     
     def get_hash(self):
         return hashlib.sha256(str(self.timestamp).encode('utf-8')+str(self.input).encode('utf-8')).hexdigest()
-    
 
 class Trade:
     def __init__(self, timestamp, _to, _from, fassets, tassets, tradestorage):
@@ -121,24 +276,6 @@ class CollectionHandler():
                     return True
         return False
 
-class Asset:
-    def __init__(self, timestamp, public_key, collection_id, name, description, mint_number, _ad=None, _as=None):
-        self.id = len(_as.assets) + 1
-        self.name = name
-        self.description = description
-        self.collection_id = collection_id
-        self.created_at = timestamp
-        self.owner = public_key
-        self.mint = mint_number+1
-        self.trading = False
-        self.selling = False
-        _as.assets.append(self)
-        for address in _ad.addresses:
-            if address["address"]["pbc"] == public_key:
-                address["info"]["assets"].append(self.id)
-
-
-
 class Block:
     def __init__(self, timestamp, transactions, previous_hash="",addresses = "", collections="", assets="", trades="", asset=""):
         self.addresses = addresses
@@ -188,7 +325,7 @@ class Block:
                 elif transaction.input["action"] == "accept-trade":
                     TradeHandler().accept_trade(transaction.input["data"]["id"],transaction.input["data"]["signer"], self.addresses, self.assets, self.addresses, self.trades)
                 elif transaction.input["action"] == "decline-trade":
-                    TradeHandler().decline_trade(transaction.input["data"]["id"],transaction.input["data"]["signer"], self.addresses, self.assets, self.addresses, self.trades)
+                    self.TradeHandler().decline_trade(transaction.input["data"]["id"],transaction.input["data"]["signer"], self.addresses, self.assets, self.addresses, self.trades)
             elif transaction.input["type"] == "asset-transfer":
                 # check if the user owns the assets
                 # check if the other user owns the assets
@@ -216,104 +353,13 @@ class Block:
                                         if address["address"]["pve"] == transaction.input["data"]["_from"]:
                                             address["info"]["assets"].pop(address["info"]["assets"].index(asset.id))
                                     print(transaction.input["data"]["fassets"])
-                                    idd = Trade(datetime.now().timestamp(), transaction.input["data"]["_to"], transaction.input["data"]["_from"], transaction.input["data"]["fassets"], transaction.input["data"]["tassets"], self.trades)
+                                    idd = self.Trade(datetime.now().timestamp(), transaction.input["data"]["_to"], transaction.input["data"]["_from"], transaction.input["data"]["fassets"], transaction.input["data"]["tassets"], self.trades)
                                     asset.owner = {"info":"This asset is being traded.","trade_id":idd.get_id(),"refund":pbc}
                 
         self.status = 1
     
     def get_hash(self):
         return hashlib.sha256(str(self.timestamp).encode('utf-8')+str(self.transactions).encode('utf-8')+str(self.previous_hash).encode('utf-8')).hexdigest()
-
-
-# Addresses
-class Address:
-    def __init__(self):
-        self.addresses = []
-    
-    def create_address(self):
-        pve = random.randint(100000000000,99999999999999)
-        pbc = random.randint(100000000000,99999999999999)
-        private_key = "pve"+str(hashlib.sha256(str(pve).encode('utf-8')).hexdigest())
-        public_key =  "pbc"+str(hashlib.sha256(str(pbc).encode('utf-8')).hexdigest())
-        cred_keys = { 
-            "address": {
-                "pve":private_key, 
-                "pbc":public_key 
-            }, 
-            "info": {
-                "balance":float(100),
-                "assets" : [],
-                "collections" : []
-            }
-        }
-        if self.validate_address(private_key, public_key) == False:
-            self.addresses.append(cred_keys)
-            return cred_keys
-        else:
-            return self.create_address()        
-
-    def get_balance(self, private_key=None, public_key=None):
-        r = self.require(private_key, public_key)
-        if r == False:
-            return "Private and Public keys are required"
-            
-        for address in self.addresses:
-            if address["address"]["pbc"] == public_key and address["address"]["pve"] == private_key:
-                return float(address["info"]["balance"])
-        
-    def get_assets(self, private_key=None, public_key=None):
-        r = self.require(private_key, public_key)
-        if r == False:
-            return "Private and Public keys are required"
-            
-        for address in self.addresses:
-            if address["address"]["pbc"] == public_key and address["address"]["pve"] == private_key:
-                return address["info"]["assets"]
-    
-    def get_collections(self, private_key=None, public_key=None):
-        r = self.require(private_key, public_key)
-        if r == False:
-            return "Private and Public keys are required"
-            
-        for address in self.addresses:
-            if address["address"]["pbc"] == public_key and address["address"]["pve"] == private_key:
-                return address["info"]["collections"]
-    
-    def get_public_key(self, private_key=None):
-        if private_key == None:
-            return "Failed"
-        
-        for address in self.addresses:
-            if address["address"]["pve"] == private_key:
-                return address["address"]["pbc"]
-        return "Failed"
-    
-    def credit_address(self, public_key = None, amount = None):
-        if public_key == None or amount == None:
-            return "Failed"
-        
-        for address in self.addresses:
-            if address["address"]["pbc"] == public_key:
-                address["info"]["balance"] += amount
-                return address["info"]["balance"]
-        return "Failed"
-
-
-    
-    def validate_address(self, private_key=None, public_key=None):
-        r = self.require(private_key, public_key)
-        if r == False:
-            return "Private and Public keys are required"
-        
-        for address in self.addresses:
-            if address["address"]["pbc"] == public_key and address["address"]["pve"] == private_key:
-                return True
-        return False        
-
-    def require(self, private_key=None, public_key=None):
-        if private_key == None or public_key == None:
-            return False
-        return True
 
 class Blockchain:
     def __init__(self, name="", difficulty=2, minimum_transactions=2):
@@ -336,67 +382,3 @@ class Blockchain:
                     return False
         
         return True
-
-class Trilio:
-    def __init__(self):
-        self.trilio = Blockchain(
-            name="Trilio", 
-            difficulty=4,
-            minimum_transactions=1
-        )
-        # Create genisis
-        self.trilio.chain.append(Block(datetime.now().timestamp(), ["genisis block"]))
-        self.Address = Address()
-        self.TradeStorage = TradeStorage()
-        self.CollectionStorage = CollectionStorage()
-        self.AssetStorage = AssetStorage()
-    
-    def create_block(self,addresses=None, collections=None, assets=None, trades=None):
-        nonce = self.trilio.difficulty ** 12
-
-        for i in range(nonce):
-            pass
-
-        if len(self.trilio.pending_transactions) >= self.trilio.minimum_transactions:
-            # block.hash, block.timestamp, block.transactions, block.previous_hash
-            transactions = self.trilio.pending_transactions
-            self.trilio.pending_transactions = []
-            
-            block = Block(datetime.now().timestamp(), transactions, self.trilio.chain[len(self.trilio.chain)-1].hash, addresses, collections, assets, trades)
-            self.trilio.chain.append(block)
-            return block
-        else:
-            return False
-        
-
-        
-    
-    def create_transaction(self, timestamp, data):
-        self.trilio.pending_transactions.append(
-            Transaction(timestamp,data=data)
-        )
-        self.create_block(
-            addresses=self.Address,
-            collections=self.CollectionStorage,
-            trades=self.TradeStorage,
-            assets=self.AssetStorage
-        )
-    
-
-    def get_transaction(self, data):
-        for block in self.trilio.chain:
-            for transaction in block.transactions:
-                if transaction.hash == data:
-                    return transaction
-    
-    class Address(Address):
-        pass
-
-    class TradeStorage(TradeStorage):
-        pass
-
-    class CollectionStorage(CollectionStorage):
-        pass
-
-    class AssetStorage(AssetStorage):
-        pass
