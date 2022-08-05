@@ -17,13 +17,14 @@ class Trilio:
         self.AssetStorage = self.AssetStorage()
     
     def validate_chain(self):
-            for i in range(len(self.trilio.chain)):
-                if self.trilio.chain[i].transactions[0] != "genisis block":
-                    if self.trilio.chain[i].get_hash() != self.trilio.chain[i].hash:
-                        return False
-                    
-                    if self.trilio.chain[i].previous_hash != self.trilio.chain[i-1].hash:
-                        return False
+        for i in range(len(self.trilio.chain)):
+            if self.trilio.chain[i].transactions[0] != "genisis block":
+                if self.trilio.chain[i].get_hash() != self.trilio.chain[i].hash:
+                    return False
+                
+                if self.trilio.chain[i].previous_hash != self.trilio.chain[i-1].hash:
+                    return False
+        return True
     
     def create_block(self,addresses=None, collections=None, assets=None, trades=None):
         nonce = self.trilio.difficulty ** 12
@@ -35,7 +36,7 @@ class Trilio:
             # block.hash, block.timestamp, block.transactions, block.previous_hash
             transactions = self.trilio.pending_transactions
             self.trilio.pending_transactions = []
-            
+
             block = Block(datetime.now().timestamp(), transactions, self.trilio.chain[len(self.trilio.chain)-1].hash, addresses, collections, assets, trades)
             self.trilio.chain.append(block)
             return block
