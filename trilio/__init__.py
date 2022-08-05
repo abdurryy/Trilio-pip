@@ -126,7 +126,14 @@ class Trilio:
                     return address["info"]["balance"]
             return "Failed"
 
-
+        def validate_chain(self):
+            for i in range(len(self.trilio.chain)):
+                if self.trilio.chain[i].transactions[0] != "genisis block":
+                    if self.trilio.chain[i].get_hash() != self.trilio.chain[i].hash:
+                        return False
+                    
+                    if self.trilio.chain[i].previous_hash != self.trilio.chain[i-1].hash:
+                        return False
         
         def validate_address(self, private_key=None, public_key=None):
             r = self.require(private_key, public_key)
@@ -371,14 +378,3 @@ class Blockchain:
         self.pending_transactions = [
 
         ]
-
-    def validate_chain(self):
-        for i in range(len(self.chain)):
-            if self.chain[i].transactions[0] != "genisis block":
-                if self.chain[i].get_hash() != self.chain[i].hash:
-                    return False
-                
-                if self.chain[i].previous_hash != self.chain[i-1].hash:
-                    return False
-        
-        return True
